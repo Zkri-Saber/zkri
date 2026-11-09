@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Article Studio</title>
+<style>
+:root{
+  --bg:#f6f7f9;--panel:#fff;--ink:#14171c;--muted:#5d6673;--line:#e3e6eb;
+  --accent:#2f6bff;--accent-ink:#fff;--ok:#1a8f5b;--warn:#b7791f;--bad:#c53030;
+  --add:#d9f5e3;--del:#fde0e0;--code:#f0f2f6;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0f1217;--panel:#171b22;--ink:#e8ebf0;--muted:#9aa4b2;--line:#262c36;--accent:#5b8cff;--accent-ink:#06101f;--ok:#4cc38a;--warn:#e0b050;--bad:#f06a6a;--add:#17382a;--del:#3e1c1c;--code:#1d222b}
+}
+:root[data-theme="dark"]{--bg:#0f1217;--panel:#171b22;--ink:#e8ebf0;--muted:#9aa4b2;--line:#262c36;--accent:#5b8cff;--accent-ink:#06101f;--ok:#4cc38a;--warn:#e0b050;--bad:#f06a6a;--add:#17382a;--del:#3e1c1c;--code:#1d222b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
+header h1{font-size:17px;margin:0;font-weight:650;letter-spacing:.2px}
+header .sp{flex:1}
+.btn{border:1px solid var(--line);background:var(--panel);padding:7px 12px;border-radius:8px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.primary:disabled{opacity:.55;cursor:wait}
+.btn.sm{padding:4px 9px;font-size:13px}
+.btn.danger:hover{border-color:var(--bad);color:var(--bad)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 20px 0}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi b{display:block;font-size:24px;font-variant-numeric:tabular-nums}
+.kpi span{color:var(--muted);font-size:13px}
+.layout{display:grid;grid-template-columns:290px 1fr;gap:16px;padding:16px 20px 28px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.card h2{font-size:14px;margin:0;padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.card h2 .sp{flex:1}
+.pad{padding:14px}
+.alist{max-height:62vh;overflow:auto}
+.aitem{padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;gap:8px;align-items:flex-start}
+.aitem:hover{background:var(--code)}
+.aitem.sel{background:var(--code);box-shadow:inset 3px 0 var(--accent)}
+.aitem .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aitem .m{color:var(--muted);font-size:12.5px}
+.aitem input{margin-top:4px}
+.tabs{display:flex;gap:4px;padding:8px 10px 0;border-bottom:1px solid var(--line);overflow:auto}
+.tab{padding:8px 12px;border:0;background:none;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+.tab.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 4px}
+input[type=text],input[type=password],input[type=number],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+textarea{resize:vertical;min-height:140px;line-height:1.55}
+textarea.mono,pre{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+.row{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:12px}
+.tasks{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:14px}
+.task{border:1px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer;background:var(--bg)}
+.task.on{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.task b{display:block;font-size:14px}
+.task span{font-size:12.5px;color:var(--muted)}
+.out{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--bg);white-space:pre-wrap;word-wrap:break-word;min-height:80px;max-height:55vh;overflow:auto}
+.diff ins{background:var(--add);text-decoration:none;border-radius:3px}
+.diff del{background:var(--del);border-radius:3px}
+.pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.pill.ok{color:var(--ok);border-color:var(--ok)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.msg{padding:9px 12px;border-radius:8px;font-size:13.5px;margin:10px 0}
+.msg.err{background:var(--del);color:var(--ink)}
+.msg.info{background:var(--code)}
+ol.steps{padding-left:20px;margin:6px 0}
+ol.steps li{margin:6px 0}
+.hist{font-size:13px}
+.hist div{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);align-items:center}
+.hist div span:first-child{flex:1}
+.hidden{display:none!important}
+.muted{color:var(--muted)}
+@media(max-width:860px){.layout{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.alist{max-height:30vh}}
+</style>
+</head>
+<body>
+<header>
+  <h1>✦ Article Studio</h1>
+  <span class="pill">Gemini + NotebookLM</span>
+  <span class="sp"></span>
+  <button class="btn sm" id="theme">Theme</button>
+  <button class="btn sm" id="export">Export data</button>
+  <label class="btn sm" style="margin:0;color:var(--ink)">Import<input type="file" id="import" accept=".json" hidden></label>
+</header>
+
+<section class="kpis" id="kpis"></section>
+
+<main class="layout">
+  <aside class="card">
+    <h2>Articles <span class="sp"></span><button class="btn sm primary" id="newArt">+ New</button></h2>
+    <div class="pad" style="padding-bottom:0"><input type="text" id="search" placeholder="Search articles…"></div>
+    <div class="alist" id="alist"></div>
+    <div class="pad muted" style="font-size:12.5px">Tick articles to include them in the NotebookLM pack.</div>
+  </aside>
+
+  <section class="card">
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-t="work">Workbench</button>
+      <button class="tab" data-t="prompts">Prompt library</button>
+      <button class="tab" data-t="nlm">NotebookLM</button>
+      <button class="tab" data-t="settings">Settings</button>
+    </div>
+
+    <!-- WORKBENCH -->
+    <div class="pad" id="p-work">
+      <div id="noart" class="msg info">Create or select an article to begin.</div>
+      <div id="artbox" class="hidden">
+        <div class="row">
+          <div><label>Title</label><input type="text" id="aTitle"></div>
+          <div><label>Status</label><select id="aStatus"><option>draft</option><option>polished</option><option>published</option></select></div>
+        </div>
+        <label>Article text <span id="wc" class="muted"></span></label>
+        <textarea id="aText" dir="auto" style="min-height:220px"></textarea>
+        <div class="bar"><button class="btn sm danger" id="delArt">Delete article</button></div>
+
+        <h3 style="margin:18px 0 8px;font-size:14px">1 · Choose a task</h3>
+        <div class="tasks" id="taskGrid"></div>
+
+        <h3 style="margin:6px 0 8px;font-size:14px">2 · Options</h3>
+        <div class="row">
+          <div><label>Tone</label><select id="oTone"><option>neutral and professional</option><option>friendly and conversational</option><option>formal / academic</option><option>persuasive</option><option>journalistic</option><option>simple and plain</option></select></div>
+          <div><label>Output language</label><select id="oLang"><option>same as the article</option><option>English</option><option>Arabic</option><option>Kurdish (Sorani)</option><option>Turkish</option><option>French</option><option>German</option><option>Spanish</option></select></div>
+          <div><label>Audience</label><input type="text" id="oAud" placeholder="e.g. general readers"></div>
+          <div><label>Length target</label><input type="text" id="oLen" placeholder="e.g. about the same, ≤ 600 words"></div>
+        </div>
+        <label>Extra instructions (optional)</label>
+        <input type="text" id="oExtra" placeholder="e.g. keep all quotes unchanged; use British spelling">
+
+        <h3 style="margin:16px 0 8px;font-size:14px">3 · Prompt <span class="pill" id="tokHint"></span></h3>
+        <div class="bar">
+          <label style="margin:0">Target</label>
+          <select id="pMode" style="width:auto"><option value="gemini">Gemini (article inline)</option><option value="nlm">NotebookLM (refers to source)</option></select>
+          <button class="btn sm" id="btnMeta">✦ Build tailored prompt with Gemini</button>
+          <button class="btn sm" id="btnReset">Reset to template</button>
+          <button class="btn sm" id="btnCopyP">Copy prompt</button>
+        </div>
+        <textarea class="mono" id="prompt" style="min-height:200px"></textarea>
+
+        <div class="bar">
+          <button class="btn primary" id="run">Run with Gemini</button>
+          <span id="status" class="muted"></span>
+        </div>
+        <div id="err" class="msg err hidden"></div>
+
+        <div id="result" class="hidden">
+          <div class="tabs" style="padding:0;margin-bottom:10px">
+            <button class="tab on" data-r="out">Result</button>
+            <button class="tab" data-r="diff">Changes vs original</button>
+          </div>
+          <div class="out" id="outBox" dir="auto"></div>
+          <div class="out diff hidden" id="diffBox" dir="auto"></div>
+          <div class="bar">
+            <button class="btn sm" id="cpOut">Copy result</button>
+            <button class="btn sm primary" id="applyOut">Apply to article</button>
+            <button class="btn sm" id="dlOut">Download .md</button>
+          </div>
+        </div>
+
+        <h3 style="margin:18px 0 6px;font-size:14px">Run history</h3>
+        <div class="hist" id="hist"></div>
+      </div>
+    </div>
+
+    <!-- PROMPT LIBRARY -->
+    <div class="pad hidden" id="p-prompts">
+      <p class="muted" style="margin-top:0">Edit the template behind each task. Variables: <code>{{article}}</code> <code>{{tone}}</code> <code>{{language}}</code> <code>{{audience}}</code> <code>{{length}}</code> <code>{{extra}}</code>. Changes are saved in your browser.</p>
+      <div class="row"><div><label>Task</label><select id="libTask"></select></div></div>
+      <label>Name</label><input type="text" id="libName" style="margin-bottom:10px">
+      <label>Template</label>
+      <textarea class="mono" id="libTpl" style="min-height:260px"></textarea>
+      <div class="bar"><button class="btn primary" id="libSave">Save template</button><button class="btn" id="libDefault">Restore default</button><button class="btn" id="libAdd">+ Add custom task</button></div>
+    </div>
+
+    <!-- NOTEBOOKLM -->
+    <div class="pad hidden" id="p-nlm">
+      <div class="msg info">Google NotebookLM has no public API for personal accounts, so this app prepares everything for a quick hand-off instead of calling it directly.</div>
+      <ol class="steps">
+        <li>Tick the articles you want in the sidebar, then download the pack below (one Markdown file per article).</li>
+        <li><a href="https://notebooklm.google.com/" target="_blank" rel="noopener">Open NotebookLM</a> → New notebook → <b>Add sources → Upload</b> and pick the files.</li>
+        <li>Pick a task here, copy the NotebookLM prompt, and paste it in the notebook chat. Use <b>Studio</b> for Audio Overview, Briefing doc, or Study guide.</li>
+        <li>Paste NotebookLM's answer back into the article text to keep a polished version here.</li>
+      </ol>
+      <div class="bar">
+        <button class="btn primary" id="nlmPack">Download pack for selected articles</button>
+        <span id="nlmCount" class="muted"></span>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div><label>Task prompt for the notebook</label><select id="nlmTask"></select></div>
+      </div>
+      <textarea class="mono" id="nlmPrompt" readonly style="min-height:200px"></textarea>
+      <div class="bar"><button class="btn" id="nlmCopy">Copy NotebookLM prompt</button></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="pad hidden" id="p-settings">
+      <div class="row">
+        <div><label>Gemini API key</label><input type="password" id="sKey" placeholder="AIza…" autocomplete="off"></div>
+        <div><label>Model</label><input type="text" id="sModel" list="models"><datalist id="models"><option value="gemini-2.5-flash"><option value="gemini-2.5-pro"><option value="gemini-2.5-flash-lite"></datalist></div>
+        <div><label>Temperature (0–2)</label><input type="number" id="sTemp" min="0" max="2" step="0.1"></div>
+      </div>
+      <div class="bar"><button class="btn primary" id="sSave">Save</button><button class="btn" id="sTest">Test connection</button><span id="sMsg" class="muted"></span></div>
+      <div class="msg info">
+        Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. The key stays in this browser's local storage and is sent only to Google's API. On a public GitHub Pages site, never hard-code a key in the page; in Google AI Studio / Cloud Console restrict your key to your site's HTTP referrer. Articles and runs are also stored only in your browser. Use Export data for backups.
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const LS='articleStudio.v1';
+const DEFAULT_TASKS=[
+ {id:'polish',name:'Polish & proofread',desc:'Fix grammar, flow, word choice',tpl:
+`You are a senior copy editor. Polish the article below.
+- Fix grammar, spelling, punctuation and awkward phrasing.
+- Improve flow and transitions; keep the author's voice and meaning.
+- Tone: {{tone}}. Audience: {{audience}}. Output language: {{language}}. Length: {{length}}.
+- Do not invent facts, figures or quotes. Keep names, numbers and links unchanged.
+{{extra}}
+Return ONLY the polished article, no commentary.
+
+ARTICLE:
+"""
+{{article}}
+"""`},
+ {id:'clarity',name:'Simplify & clarify',desc:'Shorter sentences, plain words',tpl:
+`Rewrite the article below so it is clear and easy to read for {{audience}}.
+Use short sentences, active voice and plain words; explain jargon briefly. Tone: {{tone}}. Language: {{language}}. Length: {{length}}.
+Preserve every fact. {{extra}}
+Return only the rewritten article.
+
+ARTICLE:
+"""
+{{article}}
+"""`},
+ {id:'structure',name:'Restructure',desc:'Headings, intro, conclusion',tpl:
+`Act as an editor. Restructure the article below for readability:
+1) a strong opening paragraph, 2) logical sections with descriptive H2 headings, 3) a short conclusion with the key takeaway.
+Keep all facts; remove repetition. Tone: {{tone}}. Language: {{language}}. Audience: {{audience}}. {{extra}}
+Return Markdown only.
+
+ARTICLE:
+"""
+{{article}}
+"""`},
+ {id:'seo',name:'SEO pack',desc:'Titles, meta, keywords',tpl:
+`You are an SEO editor. For the article below produce:
+- 5 headline options (max 60 characters each)
+- a meta description (max 155 characters)
+- 8 target keywords with a one-line search-intent note
+- a URL slug
+- 3 suggestions to improve on-page SEO without keyword stuffing
+Language: {{language}}. Audience: {{audience}}. {{extra}}
+
+ARTICLE:
+"""
+{{article}}
+"""`},
+ {id:'summary',name:'Summarize',desc:'TL;DR + key points',tpl:
+`Summarize the article below.
+Give: (a) a one-sentence TL;DR, (b) 5 bullet key points, (c) one pull-quote taken verbatim from the text.
+Language: {{language}}. Length: {{length}}. {{extra}}
+
+ARTICLE:
+"""
+{{article}}
+"""`},
+ {id:'factcheck',name:'Fact-check flags',desc:'List claims to verify',tpl:
+`You are a careful fact-checker. Read the article below and list every verifiable claim (statistics, dates, names, causal claims).
+For each: quote it, rate risk (low/medium/high), and say what source would verify it. Do NOT assert whether it is true; flag only.
+Language: {{language}}. {{extra}}
+
+ARTICLE:
+"""
+{{article}}
+"""`},
+ {id:'translate',name:'Translate & localize',desc:'Natural, not literal',tpl:
+`Translate the article below into {{language}}. Make it read naturally to native readers (localize idioms), keep the tone {{tone}}, and preserve names, numbers, formatting and links. {{extra}}
+Return only the translation.
+
+ARTICLE:
+"""
+{{article}}
+"""`},
+ {id:'social',name:'Social posts',desc:'X, LinkedIn, newsletter blurb',tpl:
+`From the article below create: 1) an X/Twitter thread of 5 posts, 2) a LinkedIn post, 3) a 60-word newsletter blurb.
+Tone: {{tone}}. Audience: {{audience}}. Language: {{language}}. No invented facts. {{extra}}
+
+ARTICLE:
+"""
+{{article}}
+"""`}
+];
+
+let S=load();
+function load(){
+  try{const d=JSON.parse(localStorage.getItem(LS));if(d&&d.articles)return d}catch(e){}
+  return {articles:[],runs:[],tasks:{},custom:[],settings:{key:'',model:'gemini-2.5-flash',temp:0.4},sel:null,checked:[],theme:''};
+}
+function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
+const uid=()=>Math.random().toString(36).slice(2,10);
+const words=t=>(t.trim().match(/\S+/g)||[]).length;
+const tasks=()=>[...DEFAULT_TASKS.map(t=>({...t,...(S.tasks[t.id]||{})})),...S.custom];
+const getTask=id=>tasks().find(t=>t.id===id)||tasks()[0];
+const cur=()=>S.articles.find(a=>a.id===S.sel);
+let curTask='polish', lastOut='';
+
+/* ---------- rendering ---------- */
+function renderKpis(){
+  const polished=S.articles.filter(a=>a.status!=='draft').length;
+  const w=S.articles.reduce((n,a)=>n+words(a.text),0);
+  $('#kpis').innerHTML=[['Articles',S.articles.length],['Polished / published',polished],['Gemini runs',S.runs.length],['Words managed',w.toLocaleString()]]
+   .map(([k,v])=>`<div class="kpi"><b>${v}</b><span>${k}</span></div>`).join('');
+}
+function renderList(){
+  const q=$('#search').value.toLowerCase();
+  const el=$('#alist'); el.textContent='';
+  S.articles.filter(a=>(a.title+a.text).toLowerCase().includes(q)).forEach(a=>{
+    const d=document.createElement('div'); d.className='aitem'+(a.id===S.sel?' sel':'');
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=S.checked.includes(a.id);
+    cb.onclick=e=>{e.stopPropagation(); S.checked=cb.checked?[...new Set([...S.checked,a.id])]:S.checked.filter(x=>x!==a.id); save(); updNlm()};
+    const b=document.createElement('div'); b.style.minWidth=0;
+    const t=document.createElement('div'); t.className='t'; t.textContent=a.title||'Untitled'; t.dir='auto';
+    const m=document.createElement('div'); m.className='m'; m.textContent=`${a.status} · ${words(a.text)} words`;
+    b.append(t,m); d.append(cb,b); d.onclick=()=>{S.sel=a.id;save();renderAll()};
+    el.append(d);
+  });
+  if(!el.children.length){el.innerHTML='<div class="pad muted">No articles yet.</div>'}
+}
+function renderTasks(){
+  const g=$('#taskGrid'); g.textContent='';
+  tasks().forEach(t=>{
+    const d=document.createElement('div'); d.className='task'+(t.id===curTask?' on':'');
+    d.innerHTML='<b></b><span></span>'; d.firstChild.textContent=t.name; d.lastChild.textContent=t.desc||'Custom task';
+    d.onclick=()=>{curTask=t.id;renderTasks();buildPrompt()}; g.append(d);
+  });
+}
+function renderArticle(){
+  const a=cur();
+  $('#noart').classList.toggle('hidden',!!a); $('#artbox').classList.toggle('hidden',!a);
+  if(!a)return;
+  $('#aTitle').value=a.title; $('#aText').value=a.text; $('#aStatus').value=a.status;
+  $('#wc').textContent=`(${words(a.text)} words)`;
+  renderHist(); buildPrompt();
+}
+function renderHist(){
+  const a=cur(); const h=$('#hist'); h.textContent='';
+  const rs=S.runs.filter(r=>r.art===a.id).slice(-8).reverse();
+  if(!rs.length){h.innerHTML='<span class="muted">No runs yet.</span>';return}
+  rs.forEach(r=>{
+    const d=document.createElement('div'); const s=document.createElement('span');
+    s.textContent=`${new Date(r.ts).toLocaleString()} · ${getTask(r.task).name} · ${r.model}`;
+    const b=document.createElement('button'); b.className='btn sm'; b.textContent='View';
+    b.onclick=()=>showResult(r.output,r.input); d.append(s,b); h.append(d);
+  });
+}
+function renderAll(){renderKpis();renderList();renderTasks();renderArticle();renderLib();updNlm()}
+
+/* ---------- prompt building ---------- */
+function vars(article){
+  const v=k=>$(k).value.trim();
+  return {
+    article, tone:v('#oTone')||'neutral', language:v('#oLang')==='same as the article'?'the same language as the article':v('#oLang'),
+    audience:v('#oAud')||'general readers', length:v('#oLen')||'about the same length as the original',
+    extra:v('#oExtra')?'Additional instructions: '+v('#oExtra'):''
+  };
+}
+function fill(tpl,vs){return tpl.replace(/\{\{(\w+)\}\}/g,(m,k)=>k in vs?vs[k]:m)}
+function buildPrompt(){
+  const a=cur(); if(!a)return;
+  const t=getTask(curTask), nlm=$('#pMode').value==='nlm';
+  const ref=nlm?`[the source titled "${a.title||'Untitled'}"]`:(a.text||'(article text)');
+  let p=fill(t.tpl,vars(ref));
+  if(nlm){
+    p=p.replace(/"""\s*\[the source[^\]]*\]\s*"""/,ref);
+    p='Using ONLY the sources in this notebook (do not add outside facts), complete the following task.\n\n'+p+'\n\nCite the source passages you rely on.';
+  }
+  $('#prompt').value=p; $('#tokHint').textContent=`≈ ${Math.ceil(p.length/4).toLocaleString()} tokens`;
+  $('#run').disabled=nlm; $('#run').title=nlm?'Switch target to Gemini to run here':'';
+}
+
+/* ---------- Gemini ---------- */
+async function gemini(prompt,{temp}={}){
+  const {key,model,temp:t}=S.settings;
+  if(!key) throw new Error('Add your Gemini API key in Settings first.');
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model||'gemini-2.5-flash')}:generateContent`;
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
+    body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{temperature:temp??t??0.4}})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.error?.message||`HTTP ${r.status}`);
+  const c=j.candidates?.[0];
+  const text=(c?.content?.parts||[]).map(p=>p.text||'').join('');
+  if(!text) throw new Error(j.promptFeedback?.blockReason?`Blocked: ${j.promptFeedback.blockReason}`:`Empty response (finish: ${c?.finishReason||'unknown'})`);
+  return text;
+}
+function showErr(m){const e=$('#err');e.textContent=m||'';e.classList.toggle('hidden',!m)}
+async function runTask(){
+  const a=cur(); if(!a||!a.text.trim()){showErr('Article text is empty.');return}
+  showErr(''); const b=$('#run'); b.disabled=true; $('#status').textContent='Calling Gemini…';
+  const p=$('#prompt').value;
+  try{
+    const out=await gemini(p);
+    S.runs.push({id:uid(),art:a.id,task:curTask,model:S.settings.model,ts:Date.now(),output:out,input:a.text});
+    if(S.runs.length>200)S.runs.splice(0,S.runs.length-200);
+    save(); showResult(out,a.text); renderKpis(); renderHist(); $('#status').textContent='Done.';
+  }catch(e){showErr(e.message);$('#status').textContent=''}
+  finally{b.disabled=$('#pMode').value==='nlm'}
+}
+async function metaPrompt(){
+  const a=cur(); if(!a)return; showErr('');
+  const t=getTask(curTask), vs=vars('{{article}}');
+  const meta=`You are a prompt engineer. Write the single best prompt for an LLM to perform this editing task on the article excerpt below.
+TASK: ${t.name} — ${t.desc||''}
+Settings: tone=${vs.tone}; output language=${vs.language}; audience=${vs.audience}; length=${vs.length}. ${vs.extra}
+Base template for reference:
+${t.tpl}
+
+Requirements: tailor it to the article's genre, domain, language and weaknesses visible in the excerpt; state the role, constraints (no invented facts), and output format; end with the line ARTICLE: followed by the literal token {{article}} on its own line. Return ONLY the prompt.
+
+ARTICLE EXCERPT:
+"""
+${a.text.slice(0,2500)}
+"""`;
+  const b=$('#btnMeta'); b.disabled=true; b.textContent='Building…';
+  try{
+    let p=(await gemini(meta,{temp:0.5})).replace(/^```\w*\n?|```$/g,'').trim();
+    const full=$('#pMode').value==='nlm'?`[the source titled "${a.title||'Untitled'}"]`:a.text;
+    p=p.includes('{{article}}')?p.replace('{{article}}',full):p+'\n\nARTICLE:\n"""\n'+full+'\n"""';
+    $('#prompt').value=p; $('#tokHint').textContent=`≈ ${Math.ceil(p.length/4).toLocaleString()} tokens · tailored`;
+  }catch(e){showErr(e.message)}
+  finally{b.disabled=false;b.textContent='✦ Build tailored prompt with Gemini'}
+}
+
+/* ---------- result + diff ---------- */
+function showResult(out,orig){
+  lastOut=out; $('#result').classList.remove('hidden');
+  $('#outBox').textContent=out; $('#diffBox').innerHTML=diffHtml(orig||'',out);
+  setR('out');
+}
+function setR(k){$$('[data-r]').forEach(b=>b.classList.toggle('on',b.dataset.r===k));$('#outBox').classList.toggle('hidden',k!=='out');$('#diffBox').classList.toggle('hidden',k!=='diff')}
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function diffHtml(a,b){
+  const x=a.split(/(\s+)/).filter(Boolean), y=b.split(/(\s+)/).filter(Boolean);
+  if(x.length*y.length>9e6) return '<span class="muted">Article too long for the inline diff. Compare in the Result tab.</span>'+esc(b);
+  const n=x.length,m=y.length,W=m+1,L=new Uint32Array((n+1)*W);
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)L[i*W+j]=x[i]===y[j]?L[(i+1)*W+j+1]+1:Math.max(L[(i+1)*W+j],L[i*W+j+1]);
+  let i=0,j=0,o='';
+  while(i<n&&j<m){
+    if(x[i]===y[j]){o+=esc(x[i]);i++;j++}
+    else if(L[(i+1)*W+j]>=L[i*W+j+1]){o+='<del>'+esc(x[i])+'</del>';i++}
+    else{o+='<ins>'+esc(y[j])+'</ins>';j++}
+  }
+  while(i<n)o+='<del>'+esc(x[i++])+'</del>'; while(j<m)o+='<ins>'+esc(y[j++])+'</ins>';
+  return o;
+}
+
+/* ---------- prompt library ---------- */
+function renderLib(){
+  const sel=$('#libTask'), prev=sel.value; sel.textContent='';
+  tasks().forEach(t=>sel.append(new Option(t.name,t.id)));
+  sel.value=prev&&tasks().some(t=>t.id===prev)?prev:tasks()[0].id; fillLib();
+  const ns=$('#nlmTask'), pn=ns.value; ns.textContent=''; tasks().forEach(t=>ns.append(new Option(t.name,t.id)));
+  ns.value=pn||curTask;
+}
+function fillLib(){const t=getTask($('#libTask').value);$('#libName').value=t.name;$('#libTpl').value=t.tpl}
+function updNlm(){
+  $('#nlmCount').textContent=`${S.checked.length} article(s) selected`;
+  const a=S.articles.find(x=>S.checked.includes(x.id))||cur();
+  const t=getTask($('#nlmTask').value||curTask);
+  const title=a?(a.title||'Untitled'):'your source';
+  const vs={article:`[the source titled "${title}"]`,tone:'neutral and professional',language:'the same language as the source',audience:'general readers',length:'about the same length',extra:''};
+  $('#nlmPrompt').value='Using ONLY the sources in this notebook (do not add outside facts), complete the following task.\n\n'+fill(t.tpl,vs).replace(/"""\s*\[the source[^\]]*\]\s*"""/,vs.article)+'\n\nCite the source passages you rely on.';
+}
+
+/* ---------- utils ---------- */
+function download(name,text,type='text/markdown'){
+  const u=URL.createObjectURL(new Blob([text],{type})), a=document.createElement('a');
+  a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);
+}
+const slug=s=>(s||'article').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'-').replace(/^-|-$/g,'').slice(0,60)||'article';
+const copy=async t=>{try{await navigator.clipboard.writeText(t)}catch(e){const x=document.createElement('textarea');x.value=t;document.body.append(x);x.select();document.execCommand('copy');x.remove()}};
+
+/* ---------- events ---------- */
+$('#newArt').onclick=()=>{const a={id:uid(),title:'New article',text:'',status:'draft'};S.articles.unshift(a);S.sel=a.id;save();renderAll();$('#aTitle').select()};
+$('#search').oninput=renderList;
+$('#aTitle').oninput=e=>{cur().title=e.target.value;save();renderList();buildPrompt()};
+$('#aText').oninput=e=>{cur().text=e.target.value;$('#wc').textContent=`(${words(e.target.value)} words)`;save();renderKpis();buildPrompt()};
+$('#aText').onblur=renderList;
+$('#aStatus').onchange=e=>{cur().status=e.target.value;save();renderKpis();renderList()};
+$('#delArt').onclick=()=>{if(!confirm('Delete this article and its run history?'))return;const id=S.sel;S.articles=S.articles.filter(a=>a.id!==id);S.runs=S.runs.filter(r=>r.art!==id);S.checked=S.checked.filter(x=>x!==id);S.sel=S.articles[0]?.id||null;save();renderAll()};
+['#oTone','#oLang','#oAud','#oLen','#oExtra','#pMode'].forEach(s=>$(s).addEventListener('input',buildPrompt));
+$('#btnReset').onclick=buildPrompt;
+$('#btnCopyP').onclick=()=>copy($('#prompt').value);
+$('#btnMeta').onclick=metaPrompt;
+$('#prompt').oninput=()=>{$('#tokHint').textContent=`≈ ${Math.ceil($('#prompt').value.length/4).toLocaleString()} tokens`};
+$('#run').onclick=runTask;
+$$('[data-r]').forEach(b=>b.onclick=()=>setR(b.dataset.r));
+$('#cpOut').onclick=()=>copy(lastOut);
+$('#dlOut').onclick=()=>download(slug(cur().title)+'-'+curTask+'.md',lastOut);
+$('#applyOut').onclick=()=>{
+  const a=cur(); if(!['polish','clarity','structure','translate'].includes(curTask)&&!confirm('This task does not produce a rewritten article. Replace the article text anyway?'))return;
+  a.text=lastOut; if(a.status==='draft')a.status='polished'; save(); renderAll();
+};
+$$('#tabs .tab').forEach(b=>b.onclick=()=>{
+  $$('#tabs .tab').forEach(x=>x.classList.toggle('on',x===b));
+  ['work','prompts','nlm','settings'].forEach(k=>$('#p-'+k).classList.toggle('hidden',k!==b.dataset.t));
+  if(b.dataset.t==='nlm'){$('#nlmTask').value=curTask;updNlm()}
+});
+$('#libTask').onchange=fillLib;
+$('#libSave').onclick=()=>{
+  const id=$('#libTask').value, c=S.custom.find(t=>t.id===id);
+  if(c){c.name=$('#libName').value;c.tpl=$('#libTpl').value}
+  else S.tasks[id]={name:$('#libName').value,tpl:$('#libTpl').value};
+  save();renderTasks();renderLib();buildPrompt();$('#libSave').textContent='Saved ✓';setTimeout(()=>$('#libSave').textContent='Save template',1200);
+};
+$('#libDefault').onclick=()=>{const id=$('#libTask').value;if(S.custom.find(t=>t.id===id)){if(confirm('Delete this custom task?')){S.custom=S.custom.filter(t=>t.id!==id);curTask='polish'}}else delete S.tasks[id];save();renderTasks();renderLib();buildPrompt()};
+$('#libAdd').onclick=()=>{const n=prompt('Name for the new task?');if(!n)return;const t={id:'c'+uid(),name:n,desc:'Custom task',tpl:'Describe the task here.\n\nARTICLE:\n"""\n{{article}}\n"""'};S.custom.push(t);save();renderTasks();renderLib();$('#libTask').value=t.id;fillLib()};
+$('#nlmTask').onchange=updNlm;
+$('#nlmCopy').onclick=()=>copy($('#nlmPrompt').value);
+$('#nlmPack').onclick=()=>{
+  const list=S.articles.filter(a=>S.checked.includes(a.id)); if(!list.length){alert('Tick at least one article in the sidebar.');return}
+  list.forEach((a,i)=>setTimeout(()=>download(slug(a.title)+'.md',`# ${a.title}\n\n${a.text}\n`),i*300));
+};
+$('#sSave').onclick=()=>{S.settings={key:$('#sKey').value.trim(),model:$('#sModel').value.trim()||'gemini-2.5-flash',temp:parseFloat($('#sTemp').value)||0.4};save();$('#sMsg').textContent='Saved ✓'};
+$('#sTest').onclick=async()=>{$('#sSave').click();$('#sMsg').textContent='Testing…';try{const r=await gemini('Reply with the single word: ok',{temp:0});$('#sMsg').textContent='Connected: '+r.trim().slice(0,20)}catch(e){$('#sMsg').textContent='Failed: '+e.message}};
+$('#theme').onclick=()=>{const dark=matchMedia('(prefers-color-scheme:dark)').matches;const c=document.documentElement.dataset.theme||(dark?'dark':'light');const n=c==='dark'?'light':'dark';document.documentElement.dataset.theme=n;S.theme=n;save()};
+$('#export').onclick=()=>{const c={...S,settings:{...S.settings,key:''}};download('article-studio-backup.json',JSON.stringify(c,null,1),'application/json')};
+$('#import').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(!d.articles)throw 0;S={...S,...d,settings:{...S.settings,...d.settings,key:S.settings.key}};save();renderAll()}catch(_){alert('Not a valid backup file.')}};
+
+/* ---------- init ---------- */
+if(S.theme)document.documentElement.dataset.theme=S.theme;
+$('#sKey').value=S.settings.key;$('#sModel').value=S.settings.model;$('#sTemp').value=S.settings.temp;
+if(!S.articles.length){
+  const a={id:uid(),title:'Sample article',status:'draft',text:'Remote work have changed how teams collaborates. Many companys now offers flexible hours, but this also bring new challenges, like communication gaps and the feeling of isolation. In this article we looks at three simple habits that helps teams stay connected.'};
+  S.articles.push(a);S.sel=a.id;save();
+}
+if(!S.sel)S.sel=S.articles[0]?.id||null;
+renderAll();
+</script>
+</body>
+</html>
